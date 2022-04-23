@@ -1051,7 +1051,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(0)
-        return figure, df, species.to_json(), resources, 500, Nc_S_R, N1, S1, R1
+        return figure, df, species.to_json(), resources, 1000, Nc_S_R, N1, S1, R1
         
     elif df is None:
         R = np.sum(resources['size'])
@@ -1059,7 +1059,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(R)
-        return figure, df, species.to_json(), resources.to_json(), 500, Nc_S_R, N1, S1, R1
+        return figure, df, species.to_json(), resources.to_json(), 1000, Nc_S_R, N1, S1, R1
     
     ####################################################
     ################ GENERATE FIGURE ###################
@@ -1133,7 +1133,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         S = str(len(list(set(df['Species ID'].tolist()))))
         R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([500, df.shape[0]**0.9])
+    interval = max([1000, df.shape[0]**0.95])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
