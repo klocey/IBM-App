@@ -726,7 +726,6 @@ def update_df(df, species, resources, N, S, R):
             )
 def run_model(n_intervals, max_intervals, disabled, individuals, species, resources, S, Q, R0, n_clicks2, n_clicks3, plot_by, immigration_rate, imm_toggle, repr_toggle, death_toggle, act_disp_toggle, N1, S1, R1, n_clicks4):
     
-    print('rarefy clicks:', n_clicks4)
     w = 100
     h = 50
     N = 1000
@@ -1037,7 +1036,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     if resources.shape[0] > 0:
         resources['x_coord'] = resources['x_coord'] + (Q*0.01)*w
         resources = resources[resources['x_coord'] <= w]
-        #print(n_intervals, ' resources:', np.sum(resources['size']), '\n')
     
     ####################################################
     ############### CHECK DATAFRAMES ###################
@@ -1074,7 +1072,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         fig_data.append(go.Scatter(
                             x = df['x_coord'],
                             y = df['y_coord'],
-                            text = 'Body size: ' + np.round(df['body size'], 3).astype(str) + '<br>' + 'Resource quota: ' + np.round(df['resource quota'], 3).astype(str) + '<br>' + 'BMR: ' + np.round(df['basal metabolic rate'], 3).astype(str) + '<br>' + 'BMR reduction in dormancy: ' + np.round(df['bmr reduction in dormancy'], 3).astype(str) + '<br>' + 'Resource use efficiency: ' + np.round(df['resource efficiency 1'], 3).astype(str) + '<br>' + 'Resuscitation rate: ' + np.round(df['resuscitation rate'], 3).astype(str) + '<br>' + 'Active dispersal rate: ' + np.round(df['active dispersal rate'], 3).astype(str) + '<br>' + 'Growth rate: ' + np.round(df['growth rate'], 3).astype(str),
+                            #text = 'Body size: ' + np.round(df['body size'], 3).astype(str) + '<br>' + 'Resource quota: ' + np.round(df['resource quota'], 3).astype(str) + '<br>' + 'BMR: ' + np.round(df['basal metabolic rate'], 3).astype(str) + '<br>' + 'BMR reduction in dormancy: ' + np.round(df['bmr reduction in dormancy'], 3).astype(str) + '<br>' + 'Resource use efficiency: ' + np.round(df['resource efficiency 1'], 3).astype(str) + '<br>' + 'Resuscitation rate: ' + np.round(df['resuscitation rate'], 3).astype(str) + '<br>' + 'Active dispersal rate: ' + np.round(df['active dispersal rate'], 3).astype(str) + '<br>' + 'Growth rate: ' + np.round(df['growth rate'], 3).astype(str),
                             mode = "markers",
                             marker_size= 4 + df[plot_by]**0.75,
                             marker_color=df['color'],
@@ -1125,15 +1123,13 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             )
         
         figure.update_xaxes(range=[0, w])
-        #figure.update_xaxes(visible=False)
         figure.update_yaxes(range=[0, h])
-        #figure.update_yaxes(visible=False)
         
         Nc = str(df.shape[0])
         S = str(len(list(set(df['Species ID'].tolist()))))
         R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([1000, df.shape[0]**0.95])
+    interval = max([1000, df.shape[0]])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
