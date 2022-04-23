@@ -790,9 +790,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         )
     
     figure.update_xaxes(range=[0, w])
-    #figure.update_xaxes(visible=False)
     figure.update_yaxes(range=[0, h])
-    #figure.update_yaxes(visible=False)
     
     if disabled is True or n_clicks3 & 1 == True:
         Nc_S_R = 'N = 0' + ' | ' + 'S = 0' + ' | ' + 'Total resources = 0'
@@ -800,8 +798,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     
     if n_clicks2 & 1 == True:
         raise PreventUpdate
-        
-        
+
     if species is None:
         # declare initial dataframe
         species = pd.DataFrame(columns=['Species ID'])
@@ -1071,16 +1068,18 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     if df.shape[0] > 0:
         if df.shape[0] > 1000 and n_clicks4 > 0:
             df = df.sample(n=1000, replace=False)
+            
+        tdf = tdf.sample(n=100, replace=False)
+
         fig_data = []
-        
         fig_data.append(go.Scatter(
-                            x = df['x_coord'],
-                            y = df['y_coord'],
-                            text = 'Body size: ' + np.round(df['body size'], 3).astype(str) + '<br>' + 'Resource quota: ' + np.round(df['resource quota'], 3).astype(str) + '<br>' + 'BMR: ' + np.round(df['basal metabolic rate'], 3).astype(str) + '<br>' + 'BMR reduction in dormancy: ' + np.round(df['bmr reduction in dormancy'], 3).astype(str) + '<br>' + 'Resource use efficiency: ' + np.round(df['resource efficiency 1'], 3).astype(str) + '<br>' + 'Resuscitation rate: ' + np.round(df['resuscitation rate'], 3).astype(str) + '<br>' + 'Active dispersal rate: ' + np.round(df['active dispersal rate'], 3).astype(str) + '<br>' + 'Growth rate: ' + np.round(df['growth rate'], 3).astype(str),
+                            x = tdf['x_coord'],
+                            y = tdf['y_coord'],
+                            text = 'Body size: ' + np.round(tdf['body size'], 3).astype(str) + '<br>' + 'Resource quota: ' + np.round(tdf['resource quota'], 3).astype(str) + '<br>' + 'BMR: ' + np.round(tdf['basal metabolic rate'], 3).astype(str) + '<br>' + 'BMR reduction in dormancy: ' + np.round(tdf['bmr reduction in dormancy'], 3).astype(str) + '<br>' + 'Resource use efficiency: ' + np.round(tdf['resource efficiency 1'], 3).astype(str) + '<br>' + 'Resuscitation rate: ' + np.round(tdf['resuscitation rate'], 3).astype(str) + '<br>' + 'Active dispersal rate: ' + np.round(tdf['active dispersal rate'], 3).astype(str) + '<br>' + 'Growth rate: ' + np.round(tdf['growth rate'], 3).astype(str),
                             mode = "markers",
-                            marker_size= 4 + df[plot_by]**0.75,
-                            marker_color=df['color'],
-                            marker_symbol=df['symbol'],
+                            marker_size= 4 + tdf[plot_by]**0.75,
+                            marker_color=tdf['color'],
+                            marker_symbol=tdf['symbol'],
                             
                         )
                     )
