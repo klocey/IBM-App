@@ -834,11 +834,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         individuals['resource quota'] = 10 #np.random.uniform(0, 100, size=S)
         individuals['body size'] = [10]*S
         individuals['metabolic state'] = [1] * S # 0 = dormant, 1 = active
-        
-        #if individuals.shape[0] < 500:
-        #    individuals = individuals.sample(n = 500, replace=True, ignore_index=True)
-        #    individuals['Ind ID'] = list(range(500))
-        #    individuals['y_coord'] = np.random.uniform(0, h, size=S)
             
     elif individuals is None and n_intervals >= 1:
         individuals = species.copy(deep=True)
@@ -869,8 +864,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     ####################################################
     
     if immigration_rate > 0 and imm_toggle == ' on':
-        im = int(immigration_rate*Q) #np.random.binomial(1, Q/w, size=immigration_rate).tolist()
-        #im = im.count(1)
+        im = int(immigration_rate*Q)
         
         maxID = 0
         if individuals.shape[0] > 0:
@@ -883,9 +877,9 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             i2['age'] = [0] * i2.shape[0]
             i2['x_coord'] = 0
             i2['y_coord'] = np.random.uniform(0, h, size=im)
-            i2['resource quota'] = 10 #np.random.uniform(0, 100, size=S)
+            i2['resource quota'] = 10
             i2['body size'] = [10]*im
-            i2['metabolic state'] = [1] * im # 0 = dormant, 1 = active
+            i2['metabolic state'] = [1] * im
             individuals = pd.concat([individuals, i2], ignore_index=True)
     
     ####################################################
@@ -894,6 +888,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     
     df = []
     if individuals.shape[0] > 0:
+        individuals = individuals[individuals['resource quota'] >= 0]
         individuals['x_coord'] = individuals['x_coord'] + (Q*0.01)*w
         
         df_a = individuals[individuals['metabolic state'] == 1]
@@ -921,8 +916,8 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             
             # growth
             g = np.minimum(df_a['body size'] * df_a['growth rate'], df_a['resource quota'])
-            df_a['body size'] = df_a['body size'] + g * df_a['metabolic state']
-            df_a['resource quota'] = df_a['resource quota'] - g * df_a['metabolic state']
+            df_a['body size'] = df_a['body size'] + g #* df_a['metabolic state']
+            df_a['resource quota'] = df_a['resource quota'] - g #* df_a['metabolic state']
             
             # active dispersal inside the system
             if act_disp_toggle == ' on':
@@ -1133,7 +1128,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         S = str(len(list(set(df['Species ID'].tolist()))))
         R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([1000, df.shape[0]**0.95])
+    interval = max([500, df.shape[0]**0.95])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
