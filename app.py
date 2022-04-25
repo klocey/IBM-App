@@ -1128,7 +1128,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         S = str(len(list(set(df['Species ID'].tolist()))))
         R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([500, df.shape[0]**0.95])
+    interval = max([1000, df.shape[0]**0.95])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
