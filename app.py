@@ -1115,9 +1115,13 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         
         if df.shape[0] > 1000 and n_clicks4 > 0:
             df = df.sample(n=1000, replace=False)
-         
+        
         if df.shape[0] > 100:
-            tdf = df.head(100)
+            df = df.head(100)
+        
+        tdf = df.copy(deep=True)
+        #if tdf.shape[0] > 100:
+        #    tdf = tdf.head(100)
         
            
         fig_data = []
