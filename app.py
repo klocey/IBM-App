@@ -109,7 +109,7 @@ def control_card1():
                         dcc.Input(id='S',
                             type='number',
                             value=100,
-                            min=1, max=1000, step=1),
+                            min=1, max=500, step=1),
                         ],
                     style={ 'width': '40%',
                             'display': 'inline-block',
@@ -488,6 +488,7 @@ app.layout = html.Div([
     dcc.Store(id='resources_2', storage_type='memory'),
     
     html.Div(id='placeholder1', style={'display': 'none'}),
+    html.Div(id='placeholder2', style={'display': 'none'}),
     
     html.Div(id='N1', style={'display': 'none'}),
     html.Div(id='N2', style={'display': 'none'}),
@@ -652,54 +653,81 @@ app.layout = html.Div([
 ############################    Callbacks   #############################################
 #########################################################################################
 
-@app.callback([Output('placeholder1', 'children'),
-               Output('interval', 'disabled'),
+@app.callback([Output('interval', 'disabled'),
                Output('main_df1', 'clear_data'),
-               Output('species_1', 'clear_data'),
                Output('resources_1', 'clear_data'),
                Output('main_df2', 'clear_data'),
-               Output('species_2', 'clear_data'),
                Output('resources_2', 'clear_data'),
                Output('btn2', 'n_clicks'),
                Output('btn3', 'n_clicks'),
                Output('btn4', 'n_clicks'),
                Output('interval', 'n_intervals'),
+               Output('species_1', 'data')
                ],
               [Input('btn1', 'n_clicks')],
               prevent_initial_call=True,
     )
 def update_df(n_clicks1):
-    return 1, False, True, True, True, True, True, True, 0, 0, 0, 0
+    S = 1000
+    species = pd.DataFrame(columns=['Species ID'])
+    
+    # assign species IDs and traits
+    species['Species ID'] = np.random.randint(0, 0xFFFFFF, size=S)
+    species['growth rate'] = np.random.uniform(0.001, 1, size=S)
+    species['active dispersal rate'] = np.random.uniform(0, 20, size=S)
+    species['resuscitation rate'] = np.random.uniform(0.001, 1, size=S)
+    species['basal metabolic rate'] = np.random.uniform(0.001, 1, size=S)
+    species['bmr reduction in dormancy'] = np.random.uniform(0.001, 1, size=S)
+    species['immigration rate'] = np.random.uniform(0.001, 1, size=S) #1 - species['active dispersal rate']/np.sum(species['active dispersal rate'])
+    
+    for i in list(range(1, 2)):
+        species['resource efficiency ' + str(i)] = np.random.uniform(0.001, 1, size=S)
+    
+    sp_ids = species['Species ID'].tolist()
+    clrs = []
+    for id in sp_ids:
+        clr = "#" + "%06x" % id
+        clrs.append(clr)
+    species['color'] = clrs
+    
+    return False, True, True, True, True, 0, 0, 0, 0, species.to_json()
     
     
     
 @app.callback([Output('main_df1', 'data'),
-               Output('species_1', 'data'),
                Output('resources_1', 'data'),
                Output('N1', 'children'),
                Output('S1', 'children'),
                Output('R1', 'children'),
-               Output('btn-rarefy', 'n_clicks'),],
+               Output('btn-rarefy', 'n_clicks'),
+               Output('placeholder1', 'children')],
               [Input('main_df2', 'data'),
-               Input('species_2', 'data'),
                Input('resources_2', 'data'),
                Input('N2', 'children'),
                Input('S2', 'children'),
-               Input('R2', 'children')],
+               Input('R2', 'children'),
+               Input('placeholder2', 'children')],
     )
-def update_df(df, species, resources, N, S, R):
-    return df, species, resources, N, S, R, 0
+def update_df(df, resources, N, S, R, p):
+
+    if p is None:
+        p = 1
+    elif p >= 9:
+        p = 1
+    else:
+        p += 1
+    return df, resources, N, S, R, 0, p
     
 
 @app.callback([Output('model_animation_fig', 'figure'),
                Output('main_df2', 'data'),
-               Output('species_2', 'data'),
                Output('resources_2', 'data'),
                Output('interval', 'interval'),
                Output('Nc_S_R', 'children'),
                Output('N2', 'children'),
                Output('S2', 'children'),
                Output('R2', 'children'),
+               Output('placeholder2', 'children'),
                ],
               [Input('interval', 'n_intervals')],
               [State('interval', 'max_intervals'),
@@ -722,22 +750,22 @@ def update_df(df, species, resources, N, S, R):
                State('S1', 'children'),
                State('R1', 'children'),
                State('btn-rarefy', 'n_clicks'),
+               State('placeholder1', 'children'),
               ],
             )
-def run_model(n_intervals, max_intervals, disabled, individuals, species, resources, S, Q, R0, n_clicks2, n_clicks3, plot_by, immigration_rate, imm_toggle, repr_toggle, death_toggle, act_disp_toggle, N1, S1, R1, n_clicks4):
+def run_model(n_intervals, max_intervals, disabled, individuals, species, resources, S, Q, R0, n_clicks2, n_clicks3, plot_by, immigration_rate, imm_toggle, repr_toggle, death_toggle, act_disp_toggle, N1, S1, R1, n_clicks4, p_num):
+    
+    #print('n_intervals:', n_intervals)
     
     w = 100
     h = 50
     N = 1000
     
-    if Q is None or math.isnan(Q) == True:
-        Q = 1
-    if R0 is None or math.isnan(R0) == True:
-        R0 = 0
+    if Q is None or math.isnan(Q) == True: Q = 1
+    if R0 is None or math.isnan(R0) == True: R0 = 0
     
     if resources is None:
         resources = pd.DataFrame(columns=['Resource ID', 'x_coord', 'y_coord', 'size'])
-
     else:
         resources = pd.read_json(resources)
         
@@ -793,55 +821,34 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     
     if disabled is True or n_clicks3 & 1 == True:
         Nc_S_R = 'N = 0' + ' | ' + 'S = 0' + ' | ' + 'Total resources = 0'
-        return figure, None, None, None, 1000, Nc_S_R, [0], [0], [0]
+        print('1')
+        return figure, None, None, 500, Nc_S_R, [0], [0], [0], p_num
     
     if n_clicks2 & 1 == True:
         raise PreventUpdate
 
-    if species is None:
-        # declare initial dataframe
-        species = pd.DataFrame(columns=['Species ID'])
-        
-        # assign species IDs and traits
-        species['Species ID'] = np.random.randint(0, 0xFFFFFF, size=S)
-        species['growth rate'] = np.random.uniform(0.001, 1, size=S)
-        species['active dispersal rate'] = np.random.uniform(0, 20, size=S)
-        species['resuscitation rate'] = np.random.uniform(0.001, 1, size=S)
-        species['basal metabolic rate'] = np.random.uniform(0.001, 1, size=S)
-        species['bmr reduction in dormancy'] = np.random.uniform(0.001, 1, size=S)
-        species['immigration rate'] = np.random.uniform(0.001, 1, size=S) #1 - species['active dispersal rate']/np.sum(species['active dispersal rate'])
-        
-        for i in list(range(1, 2)):
-            species['resource efficiency ' + str(i)] = np.random.uniform(0.001, 1, size=S)
-        
-        sp_ids = species['Species ID'].tolist()
-        clrs = []
-        for id in sp_ids:
-            clr = "#" + "%06x" % id
-            clrs.append(clr)
-        species['color'] = clrs
-        
-    else:
-        species = pd.read_json(species)
+    species = pd.read_json(species)
             
     if individuals is None and n_intervals < 2:
         individuals = species.copy(deep=True)
-        individuals['Ind ID'] = list(range(S))
+        individuals['Ind ID'] = list(range(individuals.shape[0]))
         individuals['age'] = [0] * individuals.shape[0]
         individuals['x_coord'] = 0
-        individuals['y_coord'] = np.random.uniform(0, h, size=S)
+        individuals['y_coord'] = np.random.uniform(0, h, size=individuals.shape[0])
         individuals['resource quota'] = 10 #np.random.uniform(0, 100, size=S)
-        individuals['body size'] = [10]*S
-        individuals['metabolic state'] = [1] * S # 0 = dormant, 1 = active
+        individuals['body size'] = [10]*individuals.shape[0]
+        individuals['metabolic state'] = [1] * individuals.shape[0] # 0 = dormant, 1 = active
         
         if individuals.shape[0] < 1000:
             individuals = individuals.sample(n = 1000, replace=True, ignore_index=True)
             individuals['Ind ID'] = list(range(1000))
-            individuals['y_coord'] = np.random.uniform(0, h, size=S)
-            
+            individuals['y_coord'] = np.random.uniform(0, h, size=individuals.shape[0])
+    
+        
     elif individuals is None and n_intervals >= 1:
         individuals = species.copy(deep=True)
-        individuals = individuals[individuals['growth rate'] < 0]
+        #individuals = individuals[individuals['growth rate'] < 0]
+        #individuals = pd.DataFrame(columns=list(species))
         
     else:
         individuals = pd.read_json(individuals)
@@ -849,9 +856,13 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             raise PreventUpdate
         elif individuals.shape[0] > 1000 and n_clicks4 > 0:
             individuals = individuals.sample(n=1000, replace=False)
-        
-        
-            
+    
+    print('n_intervals:', n_intervals)
+    if individuals is None:
+        print(individuals)
+    if individuals is not None:
+        print(list(individuals))
+    
     ####################################################
     ########### SIMULATE RESOURCE INFLOW ###############
     ####################################################
@@ -863,94 +874,96 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     r2['size'] = [R0*Q]
     resources = pd.concat([resources, r2], ignore_index=True)
     
-    ####################################################
-    ############## SIMULATE IMMIGRATION ################
-    ####################################################
-    
-    if immigration_rate > 0 and imm_toggle == ' on':
-        im = int(immigration_rate*Q) #np.random.binomial(1, Q/w, size=immigration_rate).tolist()
-        #im = im.count(1)
-        
-        maxID = 0
-        if individuals.shape[0] > 0:
-            maxID = 1 + np.max(individuals['Ind ID'])
-            
-        if im > 0:
-            i2 = species.sample(n=im, replace=True, weights=species['immigration rate'])
-            i2['Ind ID'] = list(range(im))
-            i2['Ind ID'] = i2['Ind ID'] + maxID
-            i2['age'] = [0] * i2.shape[0]
-            i2['x_coord'] = 0
-            i2['y_coord'] = np.random.uniform(0, h, size=im)
-            i2['resource quota'] = 10 #np.random.uniform(0, 100, size=S)
-            i2['body size'] = [10]*im
-            i2['metabolic state'] = [1] * im # 0 = dormant, 1 = active
-            individuals = pd.concat([individuals, i2], ignore_index=True)
-    
-    ####################################################
-    ### SIMULATE PROCESSES AMONG ACTIVE INDIVIDUALS ####
-    ####################################################
-    
     df = []
-    if individuals.shape[0] > 0:
-        individuals['x_coord'] = individuals['x_coord'] + (Q*0.01)*w
+    if p_num == 1:
+        ####################################################
+        ############## SIMULATE IMMIGRATION ################
+        ####################################################
         
-        df_a = individuals[individuals['metabolic state'] == 1]
-        
-        n = df_a.shape[0]
-        if n > 0:
+        if immigration_rate > 0 and imm_toggle == ' on':
+            im = int(immigration_rate*Q) #np.random.binomial(1, Q/w, size=immigration_rate).tolist()
+            #im = im.count(1)
             
-            # resource consumption
-            if resources.shape[0] > 0:
-                res = resources['size']
-                res_weights = res/np.sum(res)
+            maxID = 0
+            if individuals.shape[0] > 0 and 'age' in list(individuals):
+                maxID = 1 + np.max(individuals['Ind ID'])
                 
-                R = np.sum(res)
-                r_per_capita = R/n
-                D = R#/(w)
-                p = np.random.binomial(1, D/(1 + D), size=n)
-                total_consumed = np.minimum(r_per_capita, df_a['resource efficiency 1'] * df_a['body size']) * p
-                df_a['resource quota'] = df_a['resource quota'] + total_consumed
+            if im > 0:
+                i2 = species.sample(n=im, replace=True, weights=species['immigration rate'])
+                i2['Ind ID'] = list(range(im))
+                i2['Ind ID'] = i2['Ind ID'] + maxID
+                i2['age'] = [0] * i2.shape[0]
+                i2['x_coord'] = [0] * i2.shape[0]
+                i2['y_coord'] = np.random.uniform(0, h, size=im)
+                i2['resource quota'] = [10]*im #np.random.uniform(0, 100, size=S)
+                i2['body size'] = [10]*im
+                i2['metabolic state'] = [1] * im # 0 = dormant, 1 = active
                 
-                R -= np.sum(total_consumed)
-                if R < 0:
-                    R = 0
+                if individuals.shape[0] == 0 or 'age' not in list(individuals):
+                    individuals = i2.copy(deep=True)
+                else:
+                    individuals = pd.concat([individuals, i2], ignore_index=True)
                     
-                resources['size'] = R*res_weights
+        elif individuals.shape[0] == 0 or 'age' not in list(individuals):
+            individuals = None
+    
+    else:
+        ####################################################
+        ### SIMULATE PROCESSES AMONG ACTIVE INDIVIDUALS ####
+        ####################################################
+        
+        if individuals is not None and individuals.shape[0] > 0 and 'age' in list(individuals):
+        
+            individuals['x_coord'] = individuals['x_coord'] + ((Q*0.01)*w)/9
             
-            # growth
-            g = np.minimum(df_a['body size'] * df_a['growth rate'], df_a['resource quota'])
-            df_a['body size'] = df_a['body size'] + g * df_a['metabolic state']
-            df_a['resource quota'] = df_a['resource quota'] - g * df_a['metabolic state']
+            df_a = individuals[individuals['metabolic state'] == 1]
+            n_a = df_a.shape[0]
             
             # active dispersal inside the system
-            if act_disp_toggle == ' on':
-                d = np.minimum(df_a['x_coord'], df_a['active dispersal rate'])
+            if n_a > 0 and act_disp_toggle == ' on':
+                d = np.minimum(df_a['x_coord'], df_a['active dispersal rate']/9)
                 d = np.minimum(d, df_a['resource quota'])
                 df_a['x_coord'] = df_a['x_coord'] - d
                 df_a['resource quota'] = df_a['resource quota'] - d/w
             
-            # active maintenance
-            df_a['resource quota'] = df_a['resource quota'] - df_a['basal metabolic rate']
+            df_d = individuals[individuals['metabolic state'] == 0]
+            n_d = df_d.shape[0]
             
-            # increase age
-            df_a['age'] = df_a['age'] + 1
-            
-            # death
-            if death_toggle == ' on':
-                df_a = df_a[df_a['resource quota'] >= 0]
-            
-            # outflow of active individuals
-            if df_a.shape[0] > 0:
-                df_a = df_a[df_a['x_coord'] <= w]
-            
-
-            n = df_a.shape[0]
-            if n > 0:
+            if p_num == 2 and n_a > 0:
+                # resource consumption
+                if resources.shape[0] > 0 and 'size' in list(resources):
+                    res = resources['size']
+                    res_weights = res/np.sum(res)
+                        
+                    R = np.sum(res)
+                    r_per_capita = R/n_a
+                    D = R#/(w)
+                    p = np.random.binomial(1, D/(1 + D), size=n_a)
+                    total_consumed = np.minimum(r_per_capita, df_a['resource efficiency 1'] * df_a['body size']) * p
+                    df_a['resource quota'] = df_a['resource quota'] + total_consumed
+                        
+                    R -= np.sum(total_consumed)
+                    if R < 0: R = 0
+                            
+                    resources['size'] = R*res_weights
+                
+            elif p_num == 3 and n_a > 0:
+                # growth
+                g = np.minimum(df_a['body size'] * df_a['growth rate'], df_a['resource quota'])
+                df_a['body size'] = df_a['body size'] + g * df_a['metabolic state']
+                df_a['resource quota'] = df_a['resource quota'] - g * df_a['metabolic state']
+                    
+            elif p_num == 4 and n_a > 0:
+                # active maintenance
+                df_a['resource quota'] = df_a['resource quota'] - df_a['basal metabolic rate']
+                # death
+                if death_toggle == ' on': df_a = df_a[df_a['resource quota'] >= 0]
+                
+            elif p_num == 5 and n_a > 0:
+                # reproduction
                 df_a['resource quota'] = df_a['resource quota'].apply(lambda x : x if x > 0 else 0)
                 df_a['resource quota'].fillna(0, inplace=True)
                 
-                # reproduction
                 if repr_toggle == ' on':
                     ri = df_a['resource quota']/df_a['basal metabolic rate']
                     p = ri/(1 + ri) * df_a['body size']/(20 + df_a['body size']) * df_a['age']/(20 + df_a['age'])
@@ -958,89 +971,96 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                     df_a['reproduce'].replace(np.inf, 0, inplace=True)
                     df_a['reproduce'].replace(-np.Inf, 0, inplace=True)
                     df_a['reproduce'].fillna(0, inplace=True)
-                    
+                            
                     x = df_a['reproduce'].tolist()
-                    df_a['reproduce'] = np.random.binomial(1, df_a['reproduce'], size = n)
-                    
+                    df_a['reproduce'] = np.random.binomial(1, df_a['reproduce'], size = len(x))
+                            
                     reproduce_no = df_a[df_a['reproduce'] == 0]
                     reproduce_no.drop(labels=['reproduce'], axis=1, inplace=True)
-                    
+                            
                     reproduce_yes = df_a[df_a['reproduce'] == 1]
                     reproduce_yes.drop(labels=['reproduce'], axis=1, inplace=True)
-                    
+                            
                     if reproduce_yes.shape[0] > 0:
                         reproduce_yes['body size'] = reproduce_yes['body size']/2
                         reproduce_yes['resource quota'] = reproduce_yes['resource quota']/2
                         progeny = reproduce_yes.copy(deep=True)
                         progeny['age'] = 0
                         progeny['Ind ID'] = progeny['Ind ID'] + np.max(individuals['Ind ID'])
-                        
+                                
                         progeny['y_coord'] = progeny['y_coord'] + np.random.uniform(-1, 1, size=progeny.shape[0])
                         progeny['y_coord'].values[progeny['y_coord'].values < 0] = 0
                         progeny['y_coord'].values[progeny['y_coord'].values > h] = h
-                        
+                                
                         # merge dataframes of active individuals
                         df_a = pd.concat([reproduce_no, reproduce_yes, progeny], ignore_index=True)
                     else:
                         df_a = pd.concat([reproduce_no, reproduce_yes], ignore_index=True)
                 
+            elif p_num == 6 and n_a > 0:
                 # transition to dormancy
                 lambda_ = df_a['resource quota']/df_a['basal metabolic rate']
                 p = 1/(1+lambda_) * df_a['age']/(10+df_a['age'])
                 df_a['metabolic state'] = 1 - np.random.binomial(1, p, size = df_a.shape[0])
-                df_a['symbol'] = ['circle']*df_a.shape[0]
-            
-        ####################################################
-        #### SIMULATE PROCESS AMONG DORMANT INDIVIDUALS ####
-        ####################################################
-        
-        df_d = individuals[individuals['metabolic state'] == 0]
-        n = df_d.shape[0]
-        if n > 0:
-        
-            # dormant maintenance
-            df_d['resource quota'] = df_d['resource quota'] - df_d['basal metabolic rate'] * df_d['bmr reduction in dormancy']
-            
-            df_d['resource quota'] = df_d['resource quota'].apply(lambda x : x if x > 0 else 0)
-            df_d['resource quota'].fillna(0, inplace=True)
-            
-            # death
-            if death_toggle == ' on':
-                df_d = df_d[df_d['resource quota'] >= 0]
-                df_d['symbol'] = ['circle-open']*df_d.shape[0]
-            
-            if df_d.shape[0] > 0:
-                # transition to activity
-                df_d['metabolic state'] = np.random.binomial(1, df_d['resuscitation rate'], size = df_d.shape[0])
                 
-                # increase age
-                df_d['age'] = df_d['age'] + 1
+            elif p_num == 7 and n_d > 0:
+                # dormant maintenance
+                df_d['resource quota'] = df_d['resource quota'] - df_d['basal metabolic rate'] * df_d['bmr reduction in dormancy']
                 
-                # outflow of individuals
-                df_d = df_d[df_d['x_coord'] <= w]
-        
-    
-        if df_a.shape[0] > 0 and df_d.shape[0] > 0:
-            df = pd.concat([df_a, df_d], ignore_index=True)
-        elif df_a.shape[0] > 0:
-            df = df_a.copy(deep=True)
-        elif df_d.shape[0] > 0:
-            df = df_d.copy(deep=True)
-        else:
+                df_d['resource quota'] = df_d['resource quota'].apply(lambda x : x if x > 0 else 0)
+                df_d['resource quota'].fillna(0, inplace=True)
+                
+            elif p_num == 8 and n_d > 0:
+                # death
+                if death_toggle == ' on':
+                    df_d = df_d[df_d['resource quota'] >= 0]
+                    
+                
+                if df_d.shape[0] > 0:
+                    # transition to activity
+                    df_d['metabolic state'] = np.random.binomial(1, df_d['resuscitation rate'], size = df_d.shape[0])
+                    
+            elif p_num == 9:
+                # outflow of active individuals
+                if df_a.shape[0] > 0:
+                    df_a = df_a[df_a['x_coord'] <= w]
+                # outflow of dormant individuals
+                if df_d.shape[0] > 0:
+                    df_d = df_d[df_d['x_coord'] <= w]
+            
+            if df_a.shape[0] > 0 and df_d.shape[0] > 0:
+                df = pd.concat([df_a, df_d], ignore_index=True)
+            elif df_a.shape[0] > 0:
+                df = df_a.copy(deep=True)
+            elif df_d.shape[0] > 0:
+                df = df_d.copy(deep=True)
+            else:
+                df = None
+              
+        if isinstance(df, list) == True:
             df = None
-          
-    if isinstance(df, list) == True:
-        df = None
 
     ########### SIMULATE RESOURCE FLOW ##############
     if resources.shape[0] > 0:
-        resources['x_coord'] = resources['x_coord'] + (Q*0.01)*w
+        resources['x_coord'] = resources['x_coord'] + ((Q*0.01)*w)/9
         resources = resources[resources['x_coord'] <= w]
-    
+
     ####################################################
     ############### CHECK DATAFRAMES ###################
     ####################################################
     
+    if isinstance(df, list) == True:
+        df = None
+        
+    if p_num == 1:
+        if individuals is None or 'age' not in list(individuals) or individuals.shape[0] == 0:
+            df = None
+        else:
+            df = individuals.copy(deep=True)
+    
+    if df is not None and df.shape[0] == 0:
+        df = None
+        
     if resources.shape[0] == 0:
         resources = None
         
@@ -1049,21 +1069,48 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(0)
-        return figure, df, species.to_json(), resources, 1000, Nc_S_R, N1, S1, R1
+        print('2')
+        return figure, df, resources, 500, Nc_S_R, N1, S1, R1, p_num
         
-    elif df is None:
-        R = np.sum(resources['size'])
+    if df is None or 'age' not in list(df):
+        if resources is not None and 'size' in list(resources) and resources.shape[0] > 0:
+            R = np.sum(resources['size'])
+        elif resources is None or 'size' not in list(resources) or resources.shape[0] == 0:
+            R = 0
+        
         Nc_S_R = 'N = 0' + ' | ' + 'S = 0' + ' | ' + 'Total resources = ' + str(np.round(R,3))
         N1.append(0)
         S1.append(0)
         R1.append(R)
-        return figure, df, species.to_json(), resources.to_json(), 1000, Nc_S_R, N1, S1, R1
-    
+        print('3')
+        
+        if resources is None or resources.shape[0] == 0:
+            print('3a')
+            return figure, df, None, 500, Nc_S_R, N1, S1, R1, p_num
+        else:
+            print('3b')
+            print('resources:', resources)
+            print('df:', df)
+            print('text:', Nc_S_R)
+            print('N1:', N1)
+            print('S1:', S1)
+            print('R1:', R1)
+            print('p_num:', p_num)
+            return figure, df, None, 500, Nc_S_R, N1, S1, R1, p_num
+        
+        
     ####################################################
     ################ GENERATE FIGURE ###################
     ####################################################
     
-    if df.shape[0] > 0:
+    Nc = 0
+    S = 0
+    
+    if df.shape[0] > 0 and 'age' in list(df):
+        
+        # increase age
+        df['age'] = df['age'] + 1
+        
         if df.shape[0] > 1000 and n_clicks4 > 0:
             df = df.sample(n=1000, replace=False)
             
@@ -1076,7 +1123,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                             mode = "markers",
                             marker_size= 4 + df[plot_by]**0.75,
                             marker_color=df['color'],
-                            marker_symbol=df['symbol'],
+                            #marker_symbol='circle',
                             
                         )
                     )
@@ -1127,9 +1174,10 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         
         Nc = str(df.shape[0])
         S = str(len(list(set(df['Species ID'].tolist()))))
-        R = str(np.round(np.sum(resources['size']), 3))
+    
+    R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([1000, df.shape[0]])
+    interval = max([500, df.shape[0]**0.95])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
@@ -1137,10 +1185,13 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     R1.append(float(R))
     
     if resources is None:
-        return figure, df.to_json(), species.to_json(), resources, interval, Nc_S_R, N1, S1, R1
-        
-    return figure, df.to_json(), species.to_json(), resources.to_json(), interval, Nc_S_R, N1, S1, R1
+        print('4')
+        return figure, df.to_json(), resources, interval, Nc_S_R, N1, S1, R1, p_num
     
+    print('5')
+    return figure, df.to_json(), resources.to_json(), interval, Nc_S_R, N1, S1, R1, p_num
+
+
     
 @app.callback(Output('time_series_fig', 'figure'),
              [Input('btn4', 'n_clicks')],
@@ -1317,8 +1368,7 @@ def distribution_plot(n_clicks, x_var, y_var, main_df):
             tdf.dropna(inplace=True)
             x = tdf[x_var]
             y = tdf[y_var]
-            
-            
+
         fig_data = []
         fig_data.append(go.Scatter(
                                 x = x,
@@ -1378,4 +1428,4 @@ def distribution_plot(n_clicks, x_var, y_var, main_df):
 #########################################################################################
 
 if __name__ == "__main__":
-    app.run_server(host='0.0.0.0', debug = False) # modified to run on linux server
+    app.run_server(host='0.0.0.0', debug = True) # modified to run on linux server
