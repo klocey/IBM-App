@@ -1111,8 +1111,11 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         # increase age
         df['age'] = df['age'] + 1
         
-        if df.shape[0] > 1000 and n_clicks4 > 0:
-            df = df.sample(n=1000, replace=False)
+        if df.shape[0] > 100:
+            df = df.head(100)
+        
+        #if df.shape[0] > 1000 and n_clicks4 > 0:
+        #    df = df.sample(n=1000, replace=False)
             
         fig_data = []
         
@@ -1177,7 +1180,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     
     R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([500, df.shape[0]**0.95])
+    interval = max([300, df.shape[0]**0.8])
     Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
     
     N1.append(float(Nc))
