@@ -839,10 +839,10 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         individuals['body size'] = [10]*individuals.shape[0]
         individuals['metabolic state'] = [1] * individuals.shape[0] # 0 = dormant, 1 = active
         
-        if individuals.shape[0] < 1000:
-            individuals = individuals.sample(n = 1000, replace=True, ignore_index=True)
-            individuals['Ind ID'] = list(range(1000))
-            individuals['y_coord'] = np.random.uniform(0, h, size=individuals.shape[0])
+        #if individuals.shape[0] < 1000:
+        #    individuals = individuals.sample(n = 1000, replace=True, ignore_index=True)
+        #    individuals['Ind ID'] = list(range(1000))
+        #    individuals['y_coord'] = np.random.uniform(0, h, size=individuals.shape[0])
     
         
     elif individuals is None and n_intervals >= 1:
@@ -881,8 +881,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         ####################################################
         
         if immigration_rate > 0 and imm_toggle == ' on':
-            im = int(immigration_rate*Q) #np.random.binomial(1, Q/w, size=immigration_rate).tolist()
-            #im = im.count(1)
+            im = int(immigration_rate*Q)
             
             maxID = 0
             if individuals.shape[0] > 0 and 'age' in list(individuals):
