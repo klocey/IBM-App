@@ -821,7 +821,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     
     if disabled is True or n_clicks3 & 1 == True:
         Nc_S_R = 'N = 0' + ' | ' + 'S = 0' + ' | ' + 'Total resources = 0'
-        print('1')
+        #print('1')
         return figure, None, None, 500, Nc_S_R, [0], [0], [0], p_num
     
     if n_clicks2 & 1 == True:
@@ -857,11 +857,11 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         elif individuals.shape[0] > 1000 and n_clicks4 > 0:
             individuals = individuals.sample(n=1000, replace=False)
     
-    print('n_intervals:', n_intervals)
-    if individuals is None:
-        print(individuals)
-    if individuals is not None:
-        print(list(individuals))
+    #print('n_intervals:', n_intervals)
+    #if individuals is None:
+        #print(individuals)
+    #if individuals is not None:
+        #print(list(individuals))
     
     ####################################################
     ########### SIMULATE RESOURCE INFLOW ###############
@@ -950,14 +950,12 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             elif p_num == 3 and n_a > 0:
                 # growth
                 g = np.minimum(df_a['body size'] * df_a['growth rate'], df_a['resource quota'])
-                df_a['body size'] = df_a['body size'] + g * df_a['metabolic state']
-                df_a['resource quota'] = df_a['resource quota'] - g * df_a['metabolic state']
+                df_a['body size'] = df_a['body size'] + g
+                df_a['resource quota'] = df_a['resource quota'] - g
                     
             elif p_num == 4 and n_a > 0:
                 # active maintenance
                 df_a['resource quota'] = df_a['resource quota'] - df_a['basal metabolic rate']
-                # death
-                if death_toggle == ' on': df_a = df_a[df_a['resource quota'] >= 0]
                 
             elif p_num == 5 and n_a > 0:
                 # reproduction
@@ -1011,10 +1009,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                 df_d['resource quota'].fillna(0, inplace=True)
                 
             elif p_num == 8 and n_d > 0:
-                # death
-                if death_toggle == ' on':
-                    df_d = df_d[df_d['resource quota'] >= 0]
-                    
                 
                 if df_d.shape[0] > 0:
                     # transition to activity
@@ -1027,6 +1021,14 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                 # outflow of dormant individuals
                 if df_d.shape[0] > 0:
                     df_d = df_d[df_d['x_coord'] <= w]
+            
+            
+            # death
+            if death_toggle == ' on' and n_a > 0:
+                df_a = df_a[df_a['resource quota'] >= 0]
+            # death
+            if death_toggle == ' on'  and n_d > 0:
+                df_d = df_d[df_d['resource quota'] >= 0]
             
             if df_a.shape[0] > 0 and df_d.shape[0] > 0:
                 df = pd.concat([df_a, df_d], ignore_index=True)
@@ -1069,7 +1071,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(0)
-        print('2')
+        #print('2')
         return figure, df, resources, 500, Nc_S_R, N1, S1, R1, p_num
         
     if df is None or 'age' not in list(df):
@@ -1082,20 +1084,20 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(R)
-        print('3')
+        #print('3')
         
         if resources is None or resources.shape[0] == 0:
-            print('3a')
+            #print('3a')
             return figure, df, None, 500, Nc_S_R, N1, S1, R1, p_num
         else:
-            print('3b')
-            print('resources:', resources)
-            print('df:', df)
-            print('text:', Nc_S_R)
-            print('N1:', N1)
-            print('S1:', S1)
-            print('R1:', R1)
-            print('p_num:', p_num)
+            #print('3b')
+            #print('resources:', resources)
+            #print('df:', df)
+            #print('text:', Nc_S_R)
+            #print('N1:', N1)
+            #print('S1:', S1)
+            #print('R1:', R1)
+            #print('p_num:', p_num)
             return figure, df, None, 500, Nc_S_R, N1, S1, R1, p_num
         
         
@@ -1189,10 +1191,10 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     R1.append(float(R))
     
     if resources is None:
-        print('4')
+        #print('4')
         return figure, df.to_json(), resources, interval, Nc_S_R, N1, S1, R1, p_num
     
-    print('5')
+    #print('5')
     return figure, df.to_json(), resources.to_json(), interval, Nc_S_R, N1, S1, R1, p_num
 
 
