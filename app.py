@@ -480,22 +480,15 @@ def xy_1():
 
 app.layout = html.Div([
     
-    dcc.Store(id='main_df1', storage_type='memory'),
-    dcc.Store(id='main_df2', storage_type='memory'),
-    dcc.Store(id='species_1', storage_type='memory'),
-    dcc.Store(id='species_2', storage_type='memory'),
-    dcc.Store(id='resources_1', storage_type='memory'),
-    dcc.Store(id='resources_2', storage_type='memory'),
+    dcc.Store(id='main_df', storage_type='memory'),
+    dcc.Store(id='species', storage_type='memory'),
+    dcc.Store(id='resources', storage_type='memory'),
     
     html.Div(id='placeholder1', style={'display': 'none'}),
     
-    html.Div(id='N1', style={'display': 'none'}),
-    html.Div(id='N2', style={'display': 'none'}),
-    html.Div(id='S1', style={'display': 'none'}),
-    html.Div(id='S2', style={'display': 'none'}),
-    html.Div(id='R1', style={'display': 'none'}),
-    html.Div(id='R2', style={'display': 'none'}),
-    
+    html.Div(id='N_ls', style={'display': 'none'}),
+    html.Div(id='S_ls', style={'display': 'none'}),
+    html.Div(id='R_ls', style={'display': 'none'}),
     
     html.Div(
             style={'background-color': '#f9f9f9'},
@@ -541,60 +534,35 @@ app.layout = html.Div([
                                     id="plot_by_box",
                                     children=[
                                     html.B("Plot individuals by",
-                                        style={'display': 'inline-block',
-                                       'margin-right': '20px',
-                                       'width': '100%',
+                                        style={'display': 'inline-block', 'margin-right': '20px', 'width': '100%',
                                     },),
                                     dcc.Dropdown(
                                         id='plot_by',
                                         options=[{"label": i, "value": i} for i in ['body size', 'resource quota']],
                                         value='body size',
-                                        style={#'display': 'inline-block',
-                                           #'vertical-align': 'top',
-                                           #'margin-right': '40px',
-                                           'width': '70%',
-                                        },
+                                        style={'width': '70%'},
                                         ),
                                     ],
-                                    style={'display': 'inline-block',
-                                            'vertical-align': 'top',
-                                            'margin-right': '40px',
-                                            'width': '30%',
-                                         },
-                                    ),
-                                
+                                    style={'display': 'inline-block', 'vertical-align': 'top',
+                                            'margin-right': '40px', 'width': '30%'},),
                                 html.Div(
                                     id="update_text_box1",
-                                    children=[
-                                        html.H6(id='Nc_S_R',
-                                            style={
-                                            #'display': 'inline-block',
-                                            #'width': '50%',
-                                            #'font-size': '24',
-                                            }),
-                                        
-                                        ],
+                                    children=[html.H6(id='Nc_S_R')],
                                     style={'display': 'inline-block'},
                                     ),
                                     
                                 html.Hr(),
                                 dcc.Graph(id='model_animation_fig')],
                                 
-                            style={#'width': '100%',
-                                #'display': 'inline-block',
-                                'background-color': '#f0f0f0',
-                                'padding': '0px',
-                                'margin-bottom': '0px',
-                                'margin-right': '0px',
-                                'margin-left': '0px',
-                                'height': '570px',
-                                },
+                            style={'background-color': '#f0f0f0', 'padding': '0px',
+                                'margin-bottom': '0px', 'margin-right': '0px',
+                                'margin-left': '0px', 'height': '570px'},
                           ),
                           dcc.Interval(
                               id='interval',
-                              interval = 1000,
+                              interval = 200,
                               n_intervals = 0,
-                              max_intervals = -1,
+                              max_intervals = 1,
                               disabled = True,
                           ),
                           ],
@@ -652,81 +620,73 @@ app.layout = html.Div([
 ############################    Callbacks   #############################################
 #########################################################################################
 
-@app.callback([Output('placeholder1', 'children'),
-               Output('interval', 'disabled'),
-               Output('main_df1', 'clear_data'),
-               Output('species_1', 'clear_data'),
-               Output('resources_1', 'clear_data'),
-               Output('main_df2', 'clear_data'),
-               Output('species_2', 'clear_data'),
-               Output('resources_2', 'clear_data'),
+@app.callback([Output('interval', 'disabled'),
+               Output('main_df', 'clear_data'),
+               Output('species', 'clear_data'),
+               Output('resources', 'clear_data'),
                Output('btn2', 'n_clicks'),
                Output('btn3', 'n_clicks'),
                Output('btn4', 'n_clicks'),
-               Output('interval', 'n_intervals'),
                ],
               [Input('btn1', 'n_clicks')],
               prevent_initial_call=True,
     )
 def update_df(n_clicks1):
-    return 1, False, True, True, True, True, True, True, 0, 0, 0, 0
-    
-    
-    
-@app.callback([Output('main_df1', 'data'),
-               Output('species_1', 'data'),
-               Output('resources_1', 'data'),
-               Output('N1', 'children'),
-               Output('S1', 'children'),
-               Output('R1', 'children'),
-               Output('btn-rarefy', 'n_clicks'),],
-              [Input('main_df2', 'data'),
-               Input('species_2', 'data'),
-               Input('resources_2', 'data'),
-               Input('N2', 'children'),
-               Input('S2', 'children'),
-               Input('R2', 'children')],
-    )
-def update_df(df, species, resources, N, S, R):
-    return df, species, resources, N, S, R, 0
+    return False, True, True, True, 0, 0, 0
+
+
+
+
+@app.callback(Output('placeholder1', 'children'),
+              [Input('interval', 'n_intervals'),
+               ],
+             prevent_initial_call=True,
+        )
+def update_df(n):
+    return n
+        
     
 
 @app.callback([Output('model_animation_fig', 'figure'),
-               Output('main_df2', 'data'),
-               Output('species_2', 'data'),
-               Output('resources_2', 'data'),
-               Output('interval', 'interval'),
+               Output('main_df', 'data'),
+               Output('species', 'data'),
+               Output('resources', 'data'),
                Output('Nc_S_R', 'children'),
-               Output('N2', 'children'),
-               Output('S2', 'children'),
-               Output('R2', 'children'),
+               Output('N_ls', 'children'),
+               Output('S_ls', 'children'),
+               Output('R_ls', 'children'),
+               Output('interval', 'max_intervals'),
+               Output('btn-rarefy', 'n_clicks'),
                ],
-              [Input('interval', 'n_intervals')],
-              [State('interval', 'max_intervals'),
-               State('interval', 'disabled'),
-               State('main_df1', 'data'),
-               State('species_1', 'data'),
-               State('resources_1', 'data'),
-               State('S', 'value'),
-               State('Q', 'value'),
-               State('R', 'value'),
-               State('btn2', 'n_clicks'),
-               State('btn3', 'n_clicks'),
-               State('plot_by', 'value'),
-               State('immigration', 'value'),
-               State('immigration_on_off', 'value'),
-               State('reproduction_on_off', 'value'),
-               State('death_on_off', 'value'),
-               State('active_dispersal_on_off', 'value'),
-               State('N1', 'children'),
-               State('S1', 'children'),
-               State('R1', 'children'),
-               State('btn-rarefy', 'n_clicks'),
+              [Input('interval', 'disabled'),
+               Input('interval', 'max_intervals'),
+               Input('placeholder1', 'children'),
+               Input('model_animation_fig', 'figure'),
+               Input('main_df', 'data'),
+               Input('species', 'data'),
+               Input('resources', 'data'),
+               Input('S', 'value'),
+               Input('Q', 'value'),
+               Input('R', 'value'),
+               Input('btn2', 'n_clicks'),
+               Input('btn3', 'n_clicks'),
+               Input('plot_by', 'value'),
+               Input('immigration', 'value'),
+               Input('immigration_on_off', 'value'),
+               Input('reproduction_on_off', 'value'),
+               Input('death_on_off', 'value'),
+               Input('active_dispersal_on_off', 'value'),
+               Input('N_ls', 'children'),
+               Input('S_ls', 'children'),
+               Input('R_ls', 'children'),
+               Input('btn-rarefy', 'n_clicks'),
               ],
             )
-def run_model(n_intervals, max_intervals, disabled, individuals, species, resources, S, Q, R0, n_clicks2, n_clicks3, plot_by, immigration_rate, imm_toggle, repr_toggle, death_toggle, act_disp_toggle, N1, S1, R1, n_clicks4):
+def run_model(disabled, max_n, ph1, main_fig, individuals, species, resources, S, Q, R0, n_clicks2, n_clicks3, plot_by, immigration_rate, imm_toggle, repr_toggle, death_toggle, act_disp_toggle, N1, S1, R1, n_clicks4):
     
-    print('rarefy clicks:', n_clicks4)
+    if disabled == True:
+        raise PreventUpdate
+        
     w = 100
     h = 50
     N = 1000
@@ -760,8 +720,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                             size = 18,
                         ),
                     ),
-                    #rangemode="tozero",
-                    #zeroline=True,
                     visible=False,
                     showticklabels = False,
                 ),
@@ -775,8 +733,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                             size = 18,
                         ),
                     ),
-                    #rangemode="tozero",
-                    #zeroline=True,
                     visible=False,
                     showticklabels = False,
                 ),
@@ -792,9 +748,9 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     figure.update_xaxes(range=[0, w])
     figure.update_yaxes(range=[0, h])
     
-    if disabled is True or n_clicks3 & 1 == True:
+    if n_clicks3 & 1 == True:
         Nc_S_R = 'N = 0' + ' | ' + 'S = 0' + ' | ' + 'Total resources = 0'
-        return figure, None, None, None, 1000, Nc_S_R, [0], [0], [0]
+        return figure, None, None, None, Nc_S_R, [0], [0], [0], max_n + 1, 0
     
     if n_clicks2 & 1 == True:
         raise PreventUpdate
@@ -825,7 +781,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     else:
         species = pd.read_json(species)
             
-    if individuals is None and n_intervals < 2:
+    if individuals is None: # add condition
         individuals = species.copy(deep=True)
         individuals['Ind ID'] = list(range(S))
         individuals['age'] = [0] * individuals.shape[0]
@@ -835,7 +791,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         individuals['body size'] = [10]*S
         individuals['metabolic state'] = [1] * S # 0 = dormant, 1 = active
             
-    elif individuals is None and n_intervals >= 1:
+    elif individuals is None: # add condition
         individuals = species.copy(deep=True)
         individuals = individuals[individuals['growth rate'] < 0]
         
@@ -843,10 +799,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         individuals = pd.read_json(individuals)
         if individuals.shape[0] == 0:
             raise PreventUpdate
-        elif individuals.shape[0] > 1000 and n_clicks4 > 0:
-            individuals = individuals.sample(n=1000, replace=False)
-        
-        
             
     ####################################################
     ########### SIMULATE RESOURCE INFLOW ###############
@@ -1032,7 +984,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
     if resources.shape[0] > 0:
         resources['x_coord'] = resources['x_coord'] + (Q*0.01)*w
         resources = resources[resources['x_coord'] <= w]
-        #print(n_intervals, ' resources:', np.sum(resources['size']), '\n')
     
     ####################################################
     ############### CHECK DATAFRAMES ###################
@@ -1046,7 +997,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(0)
-        return figure, df, species.to_json(), resources, 1000, Nc_S_R, N1, S1, R1
+        return figure, df, species.to_json(), resources, Nc_S_R, N1, S1, R1, max_n + 1, 0
         
     elif df is None:
         R = np.sum(resources['size'])
@@ -1054,7 +1005,7 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
         N1.append(0)
         S1.append(0)
         R1.append(R)
-        return figure, df, species.to_json(), resources.to_json(), 1000, Nc_S_R, N1, S1, R1
+        return figure, df, species.to_json(), resources.to_json(), Nc_S_R, N1, S1, R1, max_n + 1, 0
     
     ####################################################
     ################ GENERATE FIGURE ###################
@@ -1065,7 +1016,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             df = df.sample(n=1000, replace=False)
             
         fig_data = []
-        
         fig_data.append(go.Scatter(
                             x = df['x_coord'],
                             y = df['y_coord'],
@@ -1092,7 +1042,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                         ),
                         rangemode="tozero",
                         zeroline=True,
-                        #visible=False,
                         showticklabels = False,
                     ),
                                     
@@ -1107,7 +1056,6 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
                         ),
                         rangemode="tozero",
                         zeroline=True,
-                        #visible=False,
                         showticklabels = False,
                     ),
                                     
@@ -1120,33 +1068,41 @@ def run_model(n_intervals, max_intervals, disabled, individuals, species, resour
             )
         
         figure.update_xaxes(range=[0, w])
-        #figure.update_xaxes(visible=False)
         figure.update_yaxes(range=[0, h])
-        #figure.update_yaxes(visible=False)
         
         Nc = str(df.shape[0])
         S = str(len(list(set(df['Species ID'].tolist()))))
         R = str(np.round(np.sum(resources['size']), 3))
         
-    interval = max([1000, df.shape[0]**0.95])
-    Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R #+ ' | Time step = ' + str(n_intervals)
+    Nc_S_R = 'N = ' + Nc + ' | ' + 'S = ' + S + ' | ' + 'Total resources = ' + R
     
+    if N1 is None:
+        N1 = []
     N1.append(float(Nc))
+    
+    if S1 is None:
+        S1 = []
     S1.append(float(S))
+    
+    if R1 is None:
+        R1 = []
     R1.append(float(R))
     
     if resources is None:
-        return figure, df.to_json(), species.to_json(), resources, interval, Nc_S_R, N1, S1, R1
+        return figure, df.to_json(), species.to_json(), resources, Nc_S_R, N1, S1, R1, max_n + 1, 0
         
-    return figure, df.to_json(), species.to_json(), resources.to_json(), interval, Nc_S_R, N1, S1, R1
+    return figure, df.to_json(), species.to_json(), resources.to_json(), Nc_S_R, N1, S1, R1, max_n + 1, 0
     
     
+    
+    
+
 @app.callback(Output('time_series_fig', 'figure'),
              [Input('btn4', 'n_clicks')],
              [State('plot_by2', 'value'),
-              State('N1', 'children'),
-              State('S1', 'children'),
-              State('R1', 'children')],
+              State('N_ls', 'children'),
+              State('S_ls', 'children'),
+              State('R_ls', 'children')],
               )
 def time_series_plot(n_clicks, var_lab, N, S, R):
     x = []
@@ -1227,7 +1183,7 @@ def time_series_plot(n_clicks, var_lab, N, S, R):
 @app.callback(Output('distribution_fig', 'figure'),
             [Input('btn5', 'n_clicks')],
             [State('plot_by3', 'value'),
-             State('main_df1', 'data'),
+             State('main_df', 'data'),
             ],
             )
 def distribution_plot(n_clicks, var_lab, main_df):
@@ -1300,7 +1256,7 @@ def distribution_plot(n_clicks, var_lab, main_df):
             [Input('btn6', 'n_clicks')],
             [State('plot_by4', 'value'),
              State('plot_by5', 'value'),
-             State('main_df1', 'data'),
+             State('main_df', 'data'),
             ],
             )
 def distribution_plot(n_clicks, x_var, y_var, main_df):
